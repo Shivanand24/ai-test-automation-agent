@@ -1,14 +1,17 @@
 "use client"
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
+import { UserDeatailContext } from '@/context/UserDeatailContext';
 
 function Provider({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+
+    const [userDetails, setUserDetails] = useState<any>();
 
     console.log("Provider Loaded");
     const { user } = useUser();
@@ -28,13 +31,16 @@ function Provider({
 
             const result = await axios.post('/api/users', { name, email });
             console.log("Result", result.data);
+            setUserDetails(result.data?.user);
         } catch (error) {
             console.error("Error creating user:", error);
         }
     }
 
     return (
-        <div>{children}</div>
+        <UserDeatailContext.Provider value={{ userDetails, setUserDetails }}>
+            <div>{children}</div>
+        </UserDeatailContext.Provider>
     )
 }
 
