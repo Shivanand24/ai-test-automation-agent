@@ -40,14 +40,17 @@
     from {
       height: 0;
     }
+
     to {
       height: var(--radix-accordion-content-height);
     }
   }
+
   @keyframes accordion-up {
     from {
       height: var(--radix-accordion-content-height);
     }
+
     to {
       height: 0;
     }
@@ -99,7 +102,7 @@
   --ring: hsl(240 4.9% 83.9%);
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: hsl(240 10% 3.9%);
     --foreground: hsl(0 0% 98%);
@@ -121,12 +124,13 @@
     --input: hsl(240 3.7% 15.9%);
     --ring: hsl(240 4.9% 83.9%);
   }
-}
+} */
 
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
