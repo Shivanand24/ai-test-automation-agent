@@ -1,14 +1,44 @@
 "use client";
 
 import Image from "next/image";
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 import { UserDeatailContext } from "@/context/UserDeatailContext";
 import EmptyWorkspace from "./EmptyWorkspace";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+
 
 function WorkspaceBody() {
+
+  // const cookieStore = await cookies()
+
+  // const token = cookieStore.get("gh_token")?.value
+
+
   const { userDetails } = useContext(UserDeatailContext);
+
+
+  const router = useRouter()
+  const [token, setToken] = useState('')
+  useEffect(() => {
+    getGithubToken();
+  }, [])
+
+  const getGithubToken = async () => {
+    try {
+      const res = await axios.get('/api/github/token');
+      console.log(res.data.token)
+      setToken(res.data.token)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const OnAddRepo = () => {
+    window.location.href = '/api/github';
+  }
 
   return (
     <div className="p-8">
@@ -38,7 +68,8 @@ function WorkspaceBody() {
           </h2>
         </div>
 
-        <Button>Install</Button>
+        {!token ? <Button onClick={OnAddRepo} >Setup</Button>
+          : <Button>+Add Repo</Button>}
       </Card>
 
 
