@@ -6,10 +6,25 @@ import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 import { UserDeatailContext } from "@/context/UserDeatailContext";
 import EmptyWorkspace from "./EmptyWorkspace";
+import UserRepoList from "./UserRepoList";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import RepoDialog from "./RepoDialog";
 
+type UserRepo = {
+  id: number;
+  repoId: number;
+  userId: number;
+  name: string;
+  fullName: string;
+  private: number;
+  htmlUrl: string;
+  description: string;
+  language: string;
+  updatedAt: string;
+  owner: string;
+  defaultBranch: string;
+}
 
 function WorkspaceBody() {
 
@@ -23,9 +38,17 @@ function WorkspaceBody() {
 
   const router = useRouter()
   const [token, setToken] = useState('')
+  const [userRepoList, setUserRepoList] = useState<UserRepo[]>([])
   useEffect(() => {
     getGithubToken();
+
   }, [])
+
+  useEffect(() => {
+    if (userDetails?.id) {
+      GetUserAddedRepoList();
+    }
+  }, [userDetails])
 
   const getGithubToken = async () => {
     try {
@@ -39,6 +62,17 @@ function WorkspaceBody() {
 
   const OnAddRepo = () => {
     window.location.href = '/api/github';
+  }
+
+
+  const GetUserAddedRepoList = async () => {
+    try {
+      const result = await axios.get('/api/user-repo?userId=' + userDetails?.id);
+      console.log(result.data);
+      setUserRepoList(result.data);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   return (
@@ -73,19 +107,24 @@ function WorkspaceBody() {
           //repo dialog open when token is available
 
 
-          : <RepoDialog setRefreshPage={(refresh: boolean) => console.log(refresh)} />}
+          : <RepoDialog setRefreshPage={(refresh: boolean) => GetUserAddedRepoList()} />}
       </Card>
 
+      {!userRepoList ?
+        <Card className="mt-8">
+          <CardContent>
 
-      <Card className="mt-8">
-        <CardContent  >
-          <EmptyWorkspace />
-        </CardContent>
-      </Card>
+            <EmptyWorkspace />
+
+
+
+          </CardContent>
+        </Card> :
+        <UserRepoList repoList={userRepoList} />}
     </div>
 
 
-  );
+  )
 }
 
 export default WorkspaceBody;
