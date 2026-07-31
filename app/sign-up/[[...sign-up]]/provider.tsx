@@ -31,7 +31,7 @@ function Provider({
 
             const result = await axios.post('/api/users', { name, email });
             console.log("Result", result.data);
-            setUserDetails(result.data?.user);
+            setUserDetails(result.data?.user || result.data);
         } catch (error) {
             console.error("Error creating user:", error);
         }
