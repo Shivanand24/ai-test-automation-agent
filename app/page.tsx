@@ -1,18 +1,13 @@
 import WorkspaceBody from '@/components/custom/WorkspaceBody';
-import { UserButton } from '@clerk/nextjs';
+import WorkspaceHeader from '@/components/custom/WorkspaceHeader';
 import React from 'react';
 
 export default function Home() {
   return (
-
-
     <div>
-      <UserButton />
+      <WorkspaceHeader />
       <WorkspaceBody />
-
     </div>
-
-
   );
 }
 

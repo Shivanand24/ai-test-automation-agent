@@ -18,7 +18,6 @@ export default function RootLayout({
       <html lang="en">
 
         <body style={{ margin: 0, padding: 0 }}>
-          <h1 style={{ color: "red" }}>TEST LAYOUT</h1>
 
           <Provider>
             {children}
