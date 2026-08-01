@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
+import axios from 'axios'
 import {
     Accordion,
     AccordionContent,
@@ -7,7 +8,9 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, ListChecks, XCircle, TrendingUp, Sparkles } from 'lucide-react';
+import { CheckCircle2, ListChecks, XCircle, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
+import { Loader2Icon } from 'lucide-react';
+import TestCaseList from './TestCaseList'
 
 export type UserRepo = {
     id: number;
@@ -26,7 +29,7 @@ export type UserRepo = {
     passedTests?: number;
     failedTests?: number;
     passRate?: number;
-}
+};
 
 interface UserRepoListProps {
     repoList: UserRepo[];
@@ -39,7 +42,29 @@ interface StatusCardProps {
     iconBgColor: string;
 }
 
-const StatusCard: React.FC<StatusCardProps> = ({ title, value, icon, iconBgColor }) => {
+export type TestCase = {
+    id: number;
+    title: string;
+    description: string;
+    type: string
+    repoId: number;
+    createAt: string;
+    targetFiles: string[];
+    excectedResult: string;
+    repoName: string;
+    repoOwner: string;
+    userId: string;
+    targetRoute: string;
+}
+
+type StatusData = {
+    totalTests: number;
+    passedTests: number;
+    failedTests: number;
+    passRate: number;
+}
+
+const StatusCard = ({ title, value, icon, iconBgColor }: StatusCardProps) => {
     return (
         <div className="border border-gray-200 rounded-2xl p-4 flex items-center justify-between bg-white shadow-xs">
             <div className="flex flex-col gap-1">
@@ -53,20 +78,93 @@ const StatusCard: React.FC<StatusCardProps> = ({ title, value, icon, iconBgColor
     );
 };
 
-const UserRepoList: React.FC<UserRepoListProps> = ({ repoList }) => {
+const UserRepoList = ({ repoList }: UserRepoListProps) => {
+    const [loadingRepoId, setLoadingRepoId] = useState<number | null>(null);
+
+    const onGenerateTestCase = async (repo: UserRepo) => {
+        try {
+            setLoadingRepoId(repo.id);
+
+            // 1. Fetch GitHub token
+            const tokenRes = await axios.get('/api/github/token');
+            const githubToken = tokenRes.data?.token;
+
+            if (!githubToken) {
+                alert("GitHub token missing. Please reconnect your GitHub account.");
+                return;
+            }
+
+            // 2. Parse owner and repo name from fullName (e.g. "rrs301/portfolio-web-testing")
+            const [owner, repoName] = repo.fullName.split('/');
+
+            // 3. Make POST request to generate test cases
+            const result = await axios.post('/api/generate-test-case', {
+                userId: repo.userId.toString(),
+                repoId: repo.repoId.toString(),
+                owner: owner || repo.owner,
+                repo: repoName || repo.name,
+                branch: repo.defaultBranch || 'main',
+                githubToken: githubToken
+            });
+
+            console.log("Generated test cases:", result.data);
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.error || error?.message || "Failed to generate test cases";
+            console.error("Error generating test cases:", errorMessage);
+        } finally {
+            setLoadingRepoId(null);
+        }
+    };
+
+    const GetTestCases = async (repoId: number) => {
+        setLoadingRepoId(repoId);
+        setTestCases([]);
+        setTestCasesRepoId(repoId);
+        const res = await axios.get(`/api/test-cases?repoId=${repoId}`);
+        console.log(res.data);
+
+        setStatusData({
+            totalTests: res.data.length,
+            passedTests: 0,
+            failedTests: 0,
+            passRate: 0
+        })
+        setTestCases(res.data);
+        setLoadingRepoId(null);
+    }
+    const [testCases, setTestCases] = useState<TestCase[]>([]);
+    const [testCasesRepoId, setTestCasesRepoId] = useState<number | null>(null);
+    const [statusData, setStatusData] = useState<StatusData>({
+        totalTests: 0,
+        passedTests: 0,
+        failedTests: 0,
+        passRate: 0
+    });
+
+
     return (
         <div className="mt-8">
             <h2 className="my-4 font-bold text-xs tracking-wider text-gray-700 uppercase">REPOSITORIES</h2>
-            <Accordion type="single" collapsible className="w-full flex flex-col gap-3">
-                {repoList?.map((repo, index) => {
-                    const totalTests = repo.totalTests ?? 0;
-                    const passedTests = repo.passedTests ?? 0;
-                    const failedTests = repo.failedTests ?? 0;
-                    const passRate = repo.passRate ?? (totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0);
+            <Accordion type="single" collapsible className="w-full flex flex-col gap-3"
+                onValueChange={(value) => {
+                    if (value) {
+                        GetTestCases(Number(value));
+                    }
+                }}>
 
+                {repoList?.map((repo, index) => {
+
+                    // const totalTests = repo.totalTests ?? 0;
+                    // const passedTests = repo.passedTests ?? 0;
+                    // const failedTests = repo.failedTests ?? 0;
+                    // const passRate = repo.passRate ?? (totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0);
+                    const testCaseLoading = loadingRepoId === Number(repo.repoId?.toString() || index.toString());
+                    const isCurrentRepoTestCases = testCasesRepoId === Number(repo.repoId?.toString() || index.toString());
+                    //const passRate = totalTests > 0 ? Math.round((passedTests/ totalTests)*100):0
                     return (
+
                         <AccordionItem
-                            value={repo.id?.toString() || index.toString()}
+                            value={repo.repoId?.toString() || index.toString()}
                             key={repo.id || index}
                             className="border border-gray-200 rounded-2xl px-5 py-1 bg-white shadow-xs"
                         >
@@ -88,43 +186,62 @@ const UserRepoList: React.FC<UserRepoListProps> = ({ repoList }) => {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                         <StatusCard
                                             title="Total Tests"
-                                            value={totalTests}
+                                            value={statusData.totalTests}
                                             icon={<ListChecks className="h-5 w-5 text-blue-600" />}
                                             iconBgColor="bg-blue-50"
                                         />
                                         <StatusCard
                                             title="Passed"
-                                            value={passedTests}
+                                            value={statusData.passedTests}
                                             icon={<CheckCircle2 className="h-5 w-5 text-emerald-600" />}
                                             iconBgColor="bg-emerald-50"
                                         />
                                         <StatusCard
                                             title="Failed"
-                                            value={failedTests}
+                                            value={statusData.failedTests}
                                             icon={<XCircle className="h-5 w-5 text-rose-600" />}
                                             iconBgColor="bg-rose-50"
                                         />
                                         <StatusCard
                                             title="Pass Rate"
-                                            value={`${passRate}%`}
+                                            value={`${statusData.passRate}%`}
                                             icon={<TrendingUp className="h-5 w-5 text-purple-600" />}
                                             iconBgColor="bg-purple-50"
                                         />
                                     </div>
+                                    {!testCaseLoading && isCurrentRepoTestCases && testCases.length !== 0 && <TestCaseList testCases={testCases} onReload={() => GetTestCases(repo.id)} />}
 
-                                    {/* Generate AI Test Cases Box */}
-                                    <div className="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/60 gap-4">
-                                        <div>
-                                            <h3 className="font-semibold text-sm text-gray-900">Generate AI Test Cases</h3>
-                                            <p className="text-xs text-gray-500">
-                                                Analyze this repository and generate automated test cases using AI.
-                                            </p>
+                                    {testCaseLoading ? (
+                                        <h2 className='flex gap-3 items-center'> <Loader2Icon className='animate-spin h-4 w-4' /> Please Wait...</h2>
+                                    ) : (
+                                        /* Generate AI Test Cases Box */
+                                        (!isCurrentRepoTestCases || testCases?.length === 0) && <div className="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/60 gap-4">
+                                            <div>
+                                                <h3 className="font-semibold text-sm text-gray-900">Generate AI Test Cases</h3>
+                                                <p className="text-xs text-gray-500">
+                                                    Analyze this repository and generate automated test cases using AI.
+                                                </p>
+                                            </div>
+
+                                            <Button
+                                                disabled={loadingRepoId === repo.id}
+                                                onClick={() => onGenerateTestCase(repo)}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-4 py-2 rounded-lg flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+                                            >
+                                                {loadingRepoId === repo.id ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        Generating...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Sparkles className="w-4 h-4" />
+                                                        Generate Test Cases
+                                                    </>
+                                                )}
+                                            </Button>
                                         </div>
-                                        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-4 py-2 rounded-lg flex items-center gap-2 self-start sm:self-auto">
-                                            <Sparkles className="w-4 h-4" />
-                                            Generate Test Cases
-                                        </Button>
-                                    </div>
+                                    )}
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -132,7 +249,7 @@ const UserRepoList: React.FC<UserRepoListProps> = ({ repoList }) => {
                 })}
             </Accordion>
         </div>
-    )
+    );
 }
 
-export default UserRepoList
+export default UserRepoList;
