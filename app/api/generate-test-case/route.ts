@@ -138,7 +138,7 @@ async function getRepoTree({
         });
     }
 
-    return usefulFiles.slice(0, 5);
+    return usefulFiles.slice(0, 10);
 }
 
 async function readGithubFile({
@@ -181,7 +181,7 @@ async function readGithubFile({
 
     return {
         path,
-        content: decodedContent.slice(0, 500),
+        content: decodedContent.slice(0, 1500),
     };
 }
 
@@ -271,7 +271,7 @@ Repository File Context:
 
 ${repoContext}
 
-Generate exactly 5 test cases.
+Generate 8 test cases.
 
 Each test case must include:
 - title
@@ -296,7 +296,7 @@ Important rules:
                 type: "json_object",
             },
 
-            max_tokens: 1000,
+            max_tokens: 2500,
 
             messages: [
                 {
@@ -381,7 +381,9 @@ Important rules:
                     priority: testCase.priority,
 
                     targetRoute: testCase.targetRoute,
-                    targetFiles: testCase.targetFiles || [],
+                    targetFiles: Array.isArray(testCase.targetFiles) 
+                        ? testCase.targetFiles 
+                        : (typeof testCase.targetFiles === 'string' ? (() => { try { return JSON.parse(testCase.targetFiles) } catch(e) { return [] } })() : []),
                     expectedResult: testCase.expectedResult,
                     targetDomain: testCase.targetDomain || 'http://localhost:3000/',
 
