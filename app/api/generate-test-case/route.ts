@@ -383,6 +383,7 @@ Important rules:
                     targetRoute: testCase.targetRoute,
                     targetFiles: testCase.targetFiles || [],
                     expectedResult: testCase.expectedResult,
+                    targetDomain: testCase.targetDomain || 'http://localhost:3000/',
 
                     status: "generated",
                 }))

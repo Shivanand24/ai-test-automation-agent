@@ -10,6 +10,7 @@ import {
     SettingsIcon,
     Play
 } from "lucide-react";
+import TestCaseSettingDialog from "./TestCaseSettingDialog";
 
 type Props = {
     testCases: TestCase[];
@@ -74,9 +75,7 @@ function TestCaseList({ testCases, onReload }: Props) {
                                 Pending
                             </Badge>
 
-                            <Button size="icon" variant="outline">
-                                <SettingsIcon className="h-4 w-4" />
-                            </Button>
+                            <TestCaseSettingDialog testCase={testCase} setReload={onReload} />
                         </div>
                     </div>
                 ))}

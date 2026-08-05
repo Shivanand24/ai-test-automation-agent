@@ -4,20 +4,25 @@ import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    const searchParams = new URL(req.url).searchParams;
-    const repoId = searchParams.get("repoId");
+    try {
+        const searchParams = new URL(req.url).searchParams;
+        const repoId = searchParams.get("repoId");
 
-    if (!repoId) {
-        return NextResponse.json(
-            { error: "repoId is required" },
-            { status: 400 }
-        );
+        if (!repoId) {
+            return NextResponse.json(
+                { error: "repoId is required" },
+                { status: 400 }
+            );
+        }
+
+        const result = await db
+            .select()
+            .from(TestCasesTable)
+            .where(eq(TestCasesTable.repoId, String(repoId)));
+
+        return NextResponse.json(result);
+    } catch (error: any) {
+        console.error("Error fetching test cases:", error);
+        return NextResponse.json([], { status: 200 });
     }
-
-    const result = await db
-        .select()
-        .from(TestCasesTable)
-        .where(eq(TestCasesTable.repoId, repoId));
-
-    return NextResponse.json(result);
 }
