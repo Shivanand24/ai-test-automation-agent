@@ -119,17 +119,22 @@ async function getRepoTree({
         );
     }
 
-    if (!res.ok) {
-        const errorText = await res.text();
-        console.error("GitHub API Error (fetch tree):", errorText, "owner:", owner, "repo:", repo, "branch:", targetBranch);
-        if (errorText.includes("Git Repository is empty") || res.status === 409) {
-            throw new Error(`This GitHub repository (${owner}/${repo}) is empty. Please push your code to GitHub before generating test cases.`);
-        }
-        throw new Error(`Failed to fetch GitHub repo tree: ${errorText}`);
+    let blobs: { path: string }[] = [];
+
+    if (res.ok) {
+        const data = await res.json();
+        blobs = (data.tree || []).filter((item: any) => item.type === "blob");
     }
 
-    const data = await res.json();
-    const blobs = (data.tree || []).filter((item: any) => item.type === "blob");
+    // Fallback: If Git Trees API failed or returned empty, try fetching repo contents directly
+    if (blobs.length === 0) {
+        console.log(`Git Trees API returned empty/failed for ${owner}/${repo}. Trying /contents API fallback...`);
+        blobs = await fetchRepoContentsRecursively(owner, repo, githubToken);
+    }
+
+    if (blobs.length === 0) {
+        throw new Error(`This GitHub repository (${owner}/${repo}) appears empty or accessible code files could not be found. Please push code files to GitHub.`);
+    }
 
     let usefulFiles = blobs.filter((item: any) => isUsefulFile(item.path));
 
@@ -142,6 +147,45 @@ async function getRepoTree({
     }
 
     return usefulFiles.slice(0, 10);
+}
+
+async function fetchRepoContentsRecursively(
+    owner: string,
+    repo: string,
+    githubToken: string,
+    dirPath: string = "",
+    depth: number = 0
+): Promise<{ path: string }[]> {
+    if (depth > 3) return [];
+    try {
+        const url = `https://api.github.com/repos/${owner}/${repo}/contents/${dirPath}`;
+        const res = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${githubToken}`,
+                Accept: "application/vnd.github+json",
+            },
+            cache: "no-store",
+        });
+        if (!res.ok) return [];
+        const items = await res.json();
+        if (!Array.isArray(items)) return [];
+
+        let results: { path: string }[] = [];
+        for (const item of items) {
+            if (item.type === "file") {
+                results.push({ path: item.path });
+            } else if (item.type === "dir") {
+                const isIgnored = IGNORE_PATHS.some((ignored) => item.path.includes(ignored));
+                if (!isIgnored) {
+                    const subFiles = await fetchRepoContentsRecursively(owner, repo, githubToken, item.path, depth + 1);
+                    results = results.concat(subFiles);
+                }
+            }
+        }
+        return results;
+    } catch {
+        return [];
+    }
 }
 
 async function readGithubFile({
