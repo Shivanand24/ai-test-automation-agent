@@ -3,7 +3,7 @@ import WorkspaceHeader from '@/components/custom/WorkspaceHeader'
 
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div>
+        <div style={{ minHeight: '100vh', background: '#09090b' }}>
             <WorkspaceHeader />
             {children}
         </div>
