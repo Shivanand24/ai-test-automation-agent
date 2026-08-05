@@ -11,7 +11,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import RepoDialog from "./RepoDialog";
 
-type UserRepo = {
+export type UserRepo = {
   id: number;
   repoId: number;
   userId: number;
@@ -24,6 +24,8 @@ type UserRepo = {
   updatedAt: string;
   owner: string;
   defaultBranch: string;
+  targetDomain?: string;
+  globalInstruction?: string;
 }
 
 function WorkspaceBody() {
@@ -120,7 +122,7 @@ function WorkspaceBody() {
 
           </CardContent>
         </Card> :
-        <UserRepoList repoList={userRepoList} />}
+        <UserRepoList repoList={userRepoList} setReload={() => GetUserAddedRepoList()} />}
     </div>
 
 

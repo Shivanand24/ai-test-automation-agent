@@ -22,6 +22,8 @@ export const userrepositories = pgTable("user_repos", {
   private: integer("private").default(0).notNull(),
   active: boolean("active").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  targetDomain: varchar("target_domain").default('http://localhost:3000/'),
+  globalInstruction: text("global_test_instruction"),
 
 });
 
@@ -52,6 +54,7 @@ export const TestCasesTable = pgTable("test_cases", {
   status: varchar("status", { length: 100 }).default("generated"),
 
   createdAt: timestamp("created_at").defaultNow(),
+  targetDomain: varchar("target_domain", { length: 500 }).default('http://localhost:3000/')
 });
 
 export type User = typeof users.$inferSelect;

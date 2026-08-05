@@ -8,9 +8,10 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, ListChecks, XCircle, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
+import { CheckCircle2, ListChecks, XCircle, TrendingUp, Sparkles, Loader2, Globe2Icon, Link2Icon, Settings2 } from 'lucide-react';
 import { Loader2Icon } from 'lucide-react';
 import TestCaseList from './TestCaseList'
+import RepoSettings from './RepoSettings'
 
 export type UserRepo = {
     id: number;
@@ -25,6 +26,8 @@ export type UserRepo = {
     updatedAt: string;
     owner: string;
     defaultBranch: string;
+    targetDomain?: string;
+    globalInstruction?: string;
     totalTests?: number;
     passedTests?: number;
     failedTests?: number;
@@ -33,6 +36,7 @@ export type UserRepo = {
 
 interface UserRepoListProps {
     repoList: UserRepo[];
+    setReload?: () => void;
 }
 
 interface StatusCardProps {
@@ -48,13 +52,14 @@ export type TestCase = {
     description: string;
     type: string
     repoId: number;
-    createAt: string;
+    createdAt: string;
     targetFiles: string[];
-    excectedResult: string;
+    expectedResult: string;
     repoName: string;
     repoOwner: string;
     userId: string;
     targetRoute: string;
+    targetDomain?: string;
 }
 
 type StatusData = {
@@ -78,7 +83,7 @@ const StatusCard = ({ title, value, icon, iconBgColor }: StatusCardProps) => {
     );
 };
 
-const UserRepoList = ({ repoList }: UserRepoListProps) => {
+const UserRepoList = ({ repoList, setReload }: UserRepoListProps) => {
     const [loadingRepoId, setLoadingRepoId] = useState<number | null>(null);
 
     const onGenerateTestCase = async (repo: UserRepo) => {
@@ -117,20 +122,25 @@ const UserRepoList = ({ repoList }: UserRepoListProps) => {
     };
 
     const GetTestCases = async (repoId: number) => {
-        setLoadingRepoId(repoId);
-        setTestCases([]);
-        setTestCasesRepoId(repoId);
-        const res = await axios.get(`/api/test-cases?repoId=${repoId}`);
-        console.log(res.data);
-
-        setStatusData({
-            totalTests: res.data.length,
-            passedTests: 0,
-            failedTests: 0,
-            passRate: 0
-        })
-        setTestCases(res.data);
-        setLoadingRepoId(null);
+        try {
+            setLoadingRepoId(repoId);
+            setTestCases([]);
+            setTestCasesRepoId(repoId);
+            const res = await axios.get(`/api/test-cases?repoId=${repoId}`);
+            if (Array.isArray(res.data)) {
+                setStatusData({
+                    totalTests: res.data.length,
+                    passedTests: 0,
+                    failedTests: 0,
+                    passRate: 0
+                });
+                setTestCases(res.data);
+            }
+        } catch (error: any) {
+            console.error("Error fetching test cases:", error);
+        } finally {
+            setLoadingRepoId(null);
+        }
     }
     const [testCases, setTestCases] = useState<TestCase[]>([]);
     const [testCasesRepoId, setTestCasesRepoId] = useState<number | null>(null);
@@ -180,8 +190,22 @@ const UserRepoList = ({ repoList }: UserRepoListProps) => {
                                 </div>
                             </AccordionTrigger>
 
+
+
                             <AccordionContent className="pt-2 pb-4">
                                 <div className="flex flex-col gap-4">
+                                    {/* Target Domain & Configuration Banner */}
+                                    <div className="bg-gray-50 p-3 border rounded-xl flex justify-between items-center">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <Link2Icon className="h-4 w-4 text-gray-500" />
+                                            <h2 className="font-medium text-gray-700">Target Domain:</h2>
+                                            <h2 className="bg-white p-1 px-2 border border-gray-300 rounded-md text-primary font-semibold">
+                                                {repo.targetDomain || testCases[0]?.targetDomain || 'http://localhost:3000/'}
+                                            </h2>
+                                        </div>
+
+                                        <RepoSettings repo={repo} setReload={setReload} />
+                                    </div>
                                     {/* 4 Status Cards */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                         <StatusCard

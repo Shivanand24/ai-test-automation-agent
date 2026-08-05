@@ -56,6 +56,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(result);
     } catch (error: any) {
         console.error("Error in GET /api/user-repo:", error);
-        return NextResponse.json({ error: error.message || "Failed to fetch repositories" }, { status: 500 });
+        return NextResponse.json([], { status: 200 });
     }
 }
