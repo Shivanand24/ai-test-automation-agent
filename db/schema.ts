@@ -54,7 +54,10 @@ export const TestCasesTable = pgTable("test_cases", {
   status: varchar("status", { length: 100 }).default("generated"),
 
   createdAt: timestamp("created_at").defaultNow(),
-  targetDomain: varchar("target_domain", { length: 500 }).default('http://localhost:3000/')
+  targetDomain: varchar("target_domain", { length: 500 }).default('http://localhost:3000/'),
+  logs: text("logs").$type<string>().default(''),
+  sessionId: varchar("session_id", { length: 255 }).default(''),
+  sessionUrl: varchar("session_url", { length: 255 }).default(''),
 });
 
 export type User = typeof users.$inferSelect;

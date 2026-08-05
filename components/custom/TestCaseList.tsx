@@ -11,6 +11,7 @@ import {
     Play
 } from "lucide-react";
 import TestCaseSettingDialog from "./TestCaseSettingDialog";
+import TestCaseExecutionModel from "./TestCaseExecutionModel";
 
 type Props = {
     testCases: TestCase[];
@@ -20,6 +21,7 @@ type Props = {
 function TestCaseList({ testCases, onReload }: Props) {
 
     const [selectedTestCases, setSelectedTestCases] = useState<TestCase[]>([]);
+    const [isExecutionModelOpen, setIsExecutionModelOpen] = useState(false);
 
     const handleSelectdedTestCase = (checked: boolean | string, testCase: TestCase) => {
 
@@ -71,9 +73,11 @@ function TestCaseList({ testCases, onReload }: Props) {
                                 {testCase?.type}
                             </Badge>
 
-                            <Badge variant="secondary">
-                                Pending
-                            </Badge>
+                            {testCase?.status == 'failed' && <Badge variant={'destructive'} className='bg-red-600 text-white font-normal hover:bg-red-700'>{testCase?.status}</Badge>}
+                            {testCase?.status == 'passed' && <Badge className='bg-green-700 text-white font-normal hover:bg-green-800'>{testCase?.status}</Badge>}
+                            {testCase?.status == 'running' && <Badge className='bg-yellow-500 text-white font-normal hover:bg-yellow-600'>{testCase?.status}</Badge>}
+                            {(testCase?.status == 'generated' || testCase?.status == 'pending' || !testCase?.status) && <Badge className='bg-gray-100 text-gray-700 font-normal hover:bg-gray-200 capitalize'>{testCase?.status === 'generated' || !testCase?.status ? 'pending' : testCase?.status}</Badge>}
+
 
                             <TestCaseSettingDialog testCase={testCase} setReload={onReload} />
                         </div>
@@ -82,12 +86,23 @@ function TestCaseList({ testCases, onReload }: Props) {
 
                 <div className="p-4 bg-gray-50 border-t flex items-center justify-between rounded-b-md">
                     <h2 className="font-medium text-gray-700">Run Selected Test Case</h2>
-                    <Button disabled={selectedTestCases.length === 0} className="bg-green-700 hover:bg-green-800 text-white">
+                    <Button 
+                        disabled={selectedTestCases.length === 0} 
+                        className="bg-green-700 hover:bg-green-800 text-white"
+                        onClick={() => setIsExecutionModelOpen(true)}
+                    >
                         <Play className="h-4 w-4 mr-2" />
                         Run Selected
                     </Button>
                 </div>
             </div>
+
+            <TestCaseExecutionModel 
+                isOpen={isExecutionModelOpen}
+                onOpenChange={setIsExecutionModelOpen}
+                selectedTestCases={selectedTestCases}
+                onReload={onReload}
+            />
         </div>
     );
 }

@@ -60,6 +60,7 @@ export type TestCase = {
     userId: string;
     targetRoute: string;
     targetDomain?: string;
+    status?: string;
 }
 
 type StatusData = {
@@ -128,13 +129,19 @@ const UserRepoList = ({ repoList, setReload }: UserRepoListProps) => {
             setTestCasesRepoId(repoId);
             const res = await axios.get(`/api/test-cases?repoId=${repoId}`);
             if (Array.isArray(res.data)) {
+                const fetchedTestCases = res.data;
+                const totalTests = fetchedTestCases.length;
+                const passedTests = fetchedTestCases.filter((tc: any) => tc.status === 'passed').length;
+                const failedTests = fetchedTestCases.filter((tc: any) => tc.status === 'failed').length;
+                const passRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+
                 setStatusData({
-                    totalTests: res.data.length,
-                    passedTests: 0,
-                    failedTests: 0,
-                    passRate: 0
+                    totalTests,
+                    passedTests,
+                    failedTests,
+                    passRate
                 });
-                setTestCases(res.data);
+                setTestCases(fetchedTestCases);
             }
         } catch (error: any) {
             console.error("Error fetching test cases:", error);
@@ -142,6 +149,7 @@ const UserRepoList = ({ repoList, setReload }: UserRepoListProps) => {
             setLoadingRepoId(null);
         }
     }
+
     const [testCases, setTestCases] = useState<TestCase[]>([]);
     const [testCasesRepoId, setTestCasesRepoId] = useState<number | null>(null);
     const [statusData, setStatusData] = useState<StatusData>({
@@ -150,6 +158,8 @@ const UserRepoList = ({ repoList, setReload }: UserRepoListProps) => {
         failedTests: 0,
         passRate: 0
     });
+
+
 
 
     return (
