@@ -117,6 +117,7 @@ const UserRepoList = ({ repoList, setReload }: UserRepoListProps) => {
         } catch (error: any) {
             const errorMessage = error?.response?.data?.error || error?.message || "Failed to generate test cases";
             console.error("Error generating test cases:", errorMessage);
+            alert(errorMessage);
         } finally {
             setLoadingRepoId(null);
         }

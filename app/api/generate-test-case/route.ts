@@ -122,6 +122,9 @@ async function getRepoTree({
     if (!res.ok) {
         const errorText = await res.text();
         console.error("GitHub API Error (fetch tree):", errorText, "owner:", owner, "repo:", repo, "branch:", targetBranch);
+        if (errorText.includes("Git Repository is empty") || res.status === 409) {
+            throw new Error(`This GitHub repository (${owner}/${repo}) is empty. Please push your code to GitHub before generating test cases.`);
+        }
         throw new Error(`Failed to fetch GitHub repo tree: ${errorText}`);
     }
 
